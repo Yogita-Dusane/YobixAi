@@ -10,6 +10,13 @@ import userRouter from "./routes/user.routes.js";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 
+const frontendPath = path.join(__dirname, "./dist");
+app.use(express.static(frontendPath));
+
+// "Not Found" fix karne ke liye
+app.get("*", (req, res) => {
+    res.sendFile(path.resolve(frontendPath, "index.html"));
+});
 const app = express();
 
 // ES Modules mein __dirname set karna
