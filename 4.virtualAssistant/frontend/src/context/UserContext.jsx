@@ -9,7 +9,7 @@ axios.defaults.withCredentials = true;
 export const UserDataProvider = ({ children }) => {
     const [userData, setUserData] = useState(null);
     const [loading, setLoading] = useState(true);
-    const serverUrl = "http://localhost:8000";
+    const serverUrl = "https://yobixai.onrender.com";
 
     // 1. Function ko pehle define kiya useCallback ke saath
     const handleCurrentUser = useCallback(async () => {
