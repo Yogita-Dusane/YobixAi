@@ -59,18 +59,17 @@ function Home() {
     utterance.onend = () => setIsSpeaking(false);
     window.speechSynthesis.speak(utterance);
   };
-
-  useEffect(() => {
-    if (userData && userData.name && !hasGreeted.current) {
-      const firstName = userData.name.split(" ")[0];
-      const greetingText = `Hello ${firstName}, your assistant ${userData.assistantName || "Shifra"} is online. How can I help you?`;
-      setTimeout(() => {
-        speak(greetingText);
-        hasGreeted.current = true;
-      }, 1500);
-    }
-  }, [userData]);
-
+useEffect(() => {
+  if (userData?.name && !hasGreeted.current) {
+    hasGreeted.current = true; // 👈 Isey setTimeout ke BAHAR pehle likh dein
+    const firstName = userData.name.split(" ")[0];
+    const greetingText = `Hello ${firstName}, your assistant ${userData.assistantName || "Shifra"} is online.`;
+    
+    setTimeout(() => {
+      speak(greetingText);
+    }, 1500);
+  }
+}, [userData]);
  
   const handleSendMessage = async (textFromVoice = null) => {
     const input = (textFromVoice || chatInput).trim();
@@ -116,11 +115,10 @@ function Home() {
   };
 
 useEffect(() => {
-  handleCurrentUser();
   const loadVoices = () => window.speechSynthesis.getVoices();
   window.speechSynthesis.onvoiceschanged = loadVoices;
   loadVoices();
-}, []); 
+}, []);
   const getImg = () => {
     const imgName = userData?.assistantImage || "robo5.jpg";
     if (imgName.startsWith("http")) return imgName;

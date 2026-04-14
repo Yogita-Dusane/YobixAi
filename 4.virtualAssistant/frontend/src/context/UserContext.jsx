@@ -1,17 +1,18 @@
-import React, { createContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useState, useEffect, useCallback, useRef } from "react";
 import axios from "axios";
 
 export const userDataContext = createContext();
 
-// Global Axios Setting (Cookies ke liye)
 axios.defaults.withCredentials = true;
 
 export const UserDataProvider = ({ children }) => {
     const [userData, setUserData] = useState(null);
     const [loading, setLoading] = useState(true);
     const serverUrl = "https://yobixai.onrender.com";
+    
+    // useRef ka use karke hum track rakhenge ki kya data fetch ho chuka hai
+    const isFetched = useRef(false);
 
-    // 1. Function ko pehle define kiya useCallback ke saath
     const handleCurrentUser = useCallback(async () => {
         const token = localStorage.getItem("token");
 
@@ -22,25 +23,23 @@ export const UserDataProvider = ({ children }) => {
         }
 
         try {
-            setLoading(true);
-            console.log("📡 Sending Request to:", `${serverUrl}/api/auth/current`);
-            
+            // Hum setLoading(true) sirf tabhi karenge jab userData pehle se na ho
+            if (!userData) setLoading(true);
+
             const res = await axios.get(`${serverUrl}/api/auth/current`, {
                 headers: { 
-                    "x-auth-token": token,
-                    "Authorization": `Bearer ${token}`
+                    "Authorization": `Bearer ${token}` 
                 }
             });
-            
-            console.log("📥 Raw Response from Server:", res.data);
-            
-            if (res.data) {
+
+            // Loop Rokne Ka Sabse Zaroori Step: 
+            // Sirf tabhi update karein agar naya data purane data se sach mein alag ho
+            if (JSON.stringify(res.data) !== JSON.stringify(userData)) {
+                console.log("📥 Updating State with New Data");
                 setUserData(res.data);
-                console.log("✅ UserData State Updated!"); 
             }
         } catch (error) {
             console.error("❌ Context API Error:", error.response?.data || error.message);
-            // Agar token invalid ho toh use remove kar dena chahiye
             if (error.response?.status === 401) {
                 localStorage.removeItem("token");
                 setUserData(null);
@@ -48,7 +47,7 @@ export const UserDataProvider = ({ children }) => {
         } finally {
             setLoading(false);
         }
-    }, [serverUrl]); // Dependency sirf serverUrl hai
+    }, [serverUrl, userData]); // userData ko dependency mein rakha hai check karne ke liye
 
     const logout = async () => {
         try {
@@ -62,11 +61,17 @@ export const UserDataProvider = ({ children }) => {
         }
     };
 
-    // 2. useEffect ko function definitions ke NEECHE rakha hai
     useEffect(() => {
-        console.log("🚀 Context Mount: Fetching User...");
-        handleCurrentUser(); 
-    }, [handleCurrentUser]); // Ab ye loop nahi karega kyunki handleCurrentUser memoized hai
+        // Sirf tabhi fetch karein jab token ho aur data pehle se na ho
+        const token = localStorage.getItem("token");
+        if (token && !isFetched.current) {
+            console.log("🚀 Initial Fetch Running...");
+            handleCurrentUser();
+            isFetched.current = true; // Mark as fetched
+        } else if (!token) {
+            setLoading(false);
+        }
+    }, [handleCurrentUser]);
 
     return (
         <userDataContext.Provider value={{ 
